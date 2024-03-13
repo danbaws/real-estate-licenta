@@ -5,6 +5,7 @@ contract EscrowContract {
     struct Escrow {
         address buyer;
         address seller;
+        address arbiter;
         uint256 amount;
         bool isCompleted;
     }
@@ -12,31 +13,33 @@ contract EscrowContract {
     mapping(uint256 => Escrow) public escrows;
     uint256 public escrowCount;
 
-    event EscrowCreated(uint256 escrowId, address buyer, address seller, uint256 amount);
+    event EscrowCreated(uint256 escrowId, address buyer, address seller, address arbiter, uint256 amount);
     event EscrowCompleted(uint256 escrowId);
 
-    function createEscrow(address _seller, uint256 _amount) public payable {
+    function createEscrow(address _seller, address _arbiter, uint256 _amount) public payable {
         require(msg.value == _amount, "Incorrect amount sent");
 
         escrowCount++;
         escrows[escrowCount] = Escrow({
             buyer: msg.sender,
             seller: _seller,
+            arbiter: _arbiter,
             amount: _amount,
             isCompleted: false
         });
 
-        emit EscrowCreated(escrowCount, msg.sender, _seller, _amount);
+        emit EscrowCreated(escrowCount, msg.sender, _seller, _arbiter, _amount);
     }
 
     function completeEscrow(uint256 _escrowId) public {
         require(_escrowId <= escrowCount, "Invalid escrow ID");
         Escrow storage escrow = escrows[_escrowId];
-        require(escrow.seller == msg.sender, "Only the seller can complete the escrow");
+        require(escrow.arbiter == msg.sender, "Only the arbiter can complete the escrow");
         require(!escrow.isCompleted, "Escrow already completed");
 
         escrow.isCompleted = true;
-        payable(escrow.seller).transfer(escrow.amount);
+        (bool success, ) = payable(escrow.seller).call{value: escrow.amount}("");
+        require(success, "Transfer to seller failed");
 
         emit EscrowCompleted(_escrowId);
     }
@@ -47,7 +50,9 @@ contract EscrowContract {
         require(escrow.buyer == msg.sender, "Only the buyer can cancel the escrow");
         require(!escrow.isCompleted, "Escrow already completed");
 
-        payable(escrow.buyer).transfer(escrow.amount);
+        (bool success, ) = payable(escrow.buyer).call{value: escrow.amount}("");
+        require(success, "Refund to buyer failed");
+
         delete escrows[_escrowId];
     }
 }

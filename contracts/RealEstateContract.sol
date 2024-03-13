@@ -75,11 +75,14 @@ contract RealEstateContract is ERC721URIStorage {
         });
     }
 
-    function cancelListing(uint256 _tokenId) public {
-        require(ownerOf(_tokenId) != address(0), "Property does not exist");
-        require(ownerOf(_tokenId) == msg.sender, "Only the owner can cancel the listing");
-        require(propertyListedForSale[_tokenId], "Property is not listed for sale");
+  function deleteProperty(uint256 _tokenId) public {
+    require(ownerOf(_tokenId) == msg.sender, "Only the owner can delete the property");
 
-        propertyListedForSale[_tokenId] = false;
-    }
+    _burn(_tokenId);
+
+    delete propertyMetadata[_tokenId];
+    propertyListedForSale[_tokenId] = false;
+}
+
+
 }

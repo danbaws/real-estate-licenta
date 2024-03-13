@@ -1,68 +1,95 @@
-import React, { useState } from 'react';
-import { escrowContract } from '../contracts/EscrowContract.json';
+import React, { useState, useEffect } from 'react';
+import Web3 from 'web3';
+import { Link } from 'react-router-dom';
+
+const web3 = new Web3(window.ethereum);
+
+const { abi } = require('../contracts/EscrowContract.json');
+const escrowContract = new web3.eth.Contract(abi, '0xD7ba4477d1c330472dbd34927E1A6E0c141A1494');
 
 const ManageEscrow = () => {
-  const [sellerAddress, setSellerAddress] = useState('');
-  const [amount, setAmount] = useState(0);
+  const [escrows, setEscrows] = useState([]);
+  const [selectedEscrow, setSelectedEscrow] = useState(null);
 
-  const createEscrow = async () => {
-    await escrowContract.methods
-      .createEscrow(sellerAddress, amount)
-      .send({ from: 0xD9B56C544705106b658b8Af6BDf82c9749a89Ff2, value: amount });
+  useEffect(() => {
+    const fetchEscrows = async () => {
+      try {
+        const escrowsCount = await escrowContract.methods.escrowCount().call();
+        const escrowsList = [];
+
+        for (let i = 1; i <= escrowsCount; i++) {
+          const escrow = await escrowContract.methods.escrows(i).call();
+          escrowsList.push({ id: i, ...escrow });
+        }
+
+        setEscrows(escrowsList);
+      } catch (error) {
+        console.error('Error fetching escrows:', error);
+      }
+    };
+
+    fetchEscrows();
+  }, []);
+
+  const handleSelectEscrow = (escrow) => {
+    setSelectedEscrow(escrow);
   };
 
-  const completeEscrow = async (escrowId) => {
-    await escrowContract.methods
-      .completeEscrow(escrowId)
-      .send({ from: 0x62696a59F8374382D58bCa9a1bdB4df1042863c9 });
+  const completeEscrow = async () => {
+    try {
+      await escrowContract.methods.completeEscrow(selectedEscrow.id).send({ from: '0xf2397CFA7eBE2d5878EBfCA47D5E36E9efe04B8b' });
+      // After completing, refresh the escrows list
+      const updatedEscrows = escrows.filter((escrow) => escrow.id !== selectedEscrow.id);
+      setEscrows(updatedEscrows);
+      setSelectedEscrow(null);
+    } catch (error) {
+      console.error('Error completing escrow:', error);
+    }
   };
 
-  const cancelEscrow = async (escrowId) => {
-    await escrowContract.methods
-      .cancelEscrow(escrowId)
-      .send({ from: 0xD9B56C544705106b658b8Af6BDf82c9749a89Ff2 });
+  const cancelEscrow = async () => {
+    try {
+      await escrowContract.methods.cancelEscrow(selectedEscrow.id).send({ from: '0xf2397CFA7eBE2d5878EBfCA47D5E36E9efe04B8b' });
+      // After canceling, refresh the escrows list
+      const updatedEscrows = escrows.filter((escrow) => escrow.id !== selectedEscrow.id);
+      setEscrows(updatedEscrows);
+      setSelectedEscrow(null);
+    } catch (error) {
+      console.error('Error canceling escrow:', error);
+    }
   };
 
   return (
     <div>
       <h2>Manage Escrow</h2>
       <div>
-        <h3>Create Escrow</h3>
-        <div>
-          <label htmlFor="sellerAddress">Seller Address:</label>
-          <input
-            type="text"
-            id="sellerAddress"
-            value={sellerAddress}
-            onChange={(e) => setSellerAddress(e.target.value)}
-          />
-        </div>
-        <div>
-          <label htmlFor="amount">Amount:</label>
-          <input
-            type="number"
-            id="amount"
-            value={amount}
-            onChange={(e) => setAmount(parseInt(e.target.value))}
-          />
-        </div>
-        <button onClick={createEscrow}>Create Escrow</button>
+        <h3>Pending Escrows</h3>
+        <ul>
+          {escrows.map((escrow) => (
+            <li key={escrow.id}>
+              <button onClick={() => handleSelectEscrow(escrow)}>View Escrow #{escrow.id}</button>
+            </li>
+          ))}
+        </ul>
       </div>
+
+      {selectedEscrow && (
+        <div>
+          <h3>Selected Escrow: #{selectedEscrow.id}</h3>
+          <p>Buyer: {selectedEscrow.buyer}</p>
+          <p>Seller: {selectedEscrow.seller}</p>
+          <p>Amount: {web3.utils.fromWei(selectedEscrow.amount, 'ether')} ETH</p>
+          <p>Is Completed: {selectedEscrow.isCompleted ? 'Yes' : 'No'}</p>
+
+          <div>
+            <button onClick={completeEscrow}>Complete Escrow</button>
+            <button onClick={cancelEscrow}>Cancel Escrow</button>
+          </div>
+        </div>
+      )}
+
       <div>
-        <h3>Complete Escrow</h3>
-        <input
-          type="text"
-          placeholder="Escrow ID"
-          onChange={(e) => completeEscrow(parseInt(e.target.value))}
-        />
-      </div>
-      <div>
-        <h3>Cancel Escrow</h3>
-        <input
-          type="text"
-          placeholder="Escrow ID"
-          onChange={(e) => cancelEscrow(parseInt(e.target.value))}
-        />
+        <Link to="/">Go back</Link>
       </div>
     </div>
   );

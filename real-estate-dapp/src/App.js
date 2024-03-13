@@ -1,10 +1,9 @@
-import './App.css';
 import React from 'react';
-import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import ListProperty from './components/ListProperty';
 import BuyProperty from './components/BuyProperty';
 import ManageEscrow from './components/ManageEscrow';
-//snow oven impulse swim panic alone two enter pig latin mango frost - MNEMONIC
+
 const App = () => {
   return (
     <Router>
@@ -23,17 +22,11 @@ const App = () => {
           </ul>
         </nav>
 
-        <Switch>
-          <Route path="/buy">
-            <BuyProperty />
-          </Route>
-          <Route path="/escrow">
-            <ManageEscrow />
-          </Route>
-          <Route path="/">
-            <ListProperty />
-          </Route>
-        </Switch>
+        <Routes>
+          <Route path="/buy" element={<BuyProperty />} />
+          <Route path="/escrow" element={<ManageEscrow />} />
+          <Route path="/" element={<ListProperty />} />
+        </Routes>
       </div>
     </Router>
   );
