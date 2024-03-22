@@ -4,12 +4,10 @@ import { Link } from 'react-router-dom';
 
 const web3 = new Web3(window.ethereum);
 const { abi: RealEstateABI } = require('../contracts/RealEstateContract.json');
-const { abi: EscrowABI } = require('../contracts/EscrowContract.json');
 
 const BuyProperty = () => {
   const [properties, setProperties] = useState([]);
   const [realEstateContract, setRealEstateContract] = useState(null);
-  const [escrowContract, setEscrowContract] = useState(null);
   const [account, setAccount] = useState('');
 
   const fetchProperties = useCallback(async () => {
@@ -48,10 +46,8 @@ const BuyProperty = () => {
         try {
           await window.ethereum.enable();
           const web3 = window.web3;
-          const realEstateContract = new web3.eth.Contract(RealEstateABI, '0x80da9238Db01F603430c7709141F399504f6b94D');
+          const realEstateContract = new web3.eth.Contract(RealEstateABI, '0x2622Ea1DbB4545C70b2e3915815e28D020d43bF1');
           setRealEstateContract(realEstateContract);
-          const escrowContract = new web3.eth.Contract(EscrowABI, '0xD7ba4477d1c330472dbd34927E1A6E0c141A1494');
-          setEscrowContract(escrowContract);
           const accounts = await web3.eth.getAccounts();
           setAccount(accounts[0]);
         } catch (error) {
@@ -71,8 +67,8 @@ const BuyProperty = () => {
 
   const buyProperty = async (tokenId, price) => {
     try {
-      await escrowContract.methods
-        .createEscrow(realEstateContract.options.address, '0xf2397CFA7eBE2d5878EBfCA47D5E36E9efe04B8b', web3.utils.toWei(price, 'ether'))
+      await realEstateContract.methods
+        .buyProperty(tokenId)
         .send({ from: account, value: web3.utils.toWei(price, 'ether') });
 
       fetchProperties();

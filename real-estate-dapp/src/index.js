@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAnElTsiphWblwryWsTCQnB6UHsdSPAX_g"></script>
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -30,7 +30,7 @@ const ListProperty = () => {
 
     const initContract = async () => {
       const web3 = window.web3;
-      const contract = new web3.eth.Contract(abi, '0x80da9238Db01F603430c7709141F399504f6b94D');
+      const contract = new web3.eth.Contract(abi, '0x2622Ea1DbB4545C70b2e3915815e28D020d43bF1');
       setRealEstateContract(contract);
     };
 
